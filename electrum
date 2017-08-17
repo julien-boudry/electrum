@@ -102,7 +102,6 @@ from electrum.commands import get_parser, known_commands, Commands, config_varia
 from electrum import daemon
 from electrum import keystore
 from electrum.mnemonic import Mnemonic
-import electrum_plugins
 
 # get password routine
 def prompt_password(prompt, confirm=True):

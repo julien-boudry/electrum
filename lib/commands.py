@@ -677,6 +677,11 @@ class Commands:
         # for the python console
         return sorted(known_commands.keys())
 
+    @command('')
+    def testlightning(self):
+        from . import lightning
+        return lightning.test_lightning(self.wallet)
+
 param_descriptions = {
     'privkey': 'Private key. Type \'?\' to get a prompt.',
     'destination': 'Bitcoin address, contact or alias',
