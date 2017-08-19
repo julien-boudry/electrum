@@ -1,11 +1,11 @@
 #!/bin/sh -ex
-if [ ! -f $HOME/go/src/github.com/grpc-ecosystem ]; then
+if [ ! -d $HOME/go/src/github.com/grpc-ecosystem ]; then
   # from readme in https://github.com/grpc-ecosystem/grpc-gateway
   go get -u github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway
   go get -u github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger
   go get -u github.com/golang/protobuf/protoc-gen-go
 fi
-if [! -f $HOME/go/src/github.com/lightningnetwork/lnd ]; then
+if [ ! -d $HOME/go/src/github.com/lightningnetwork/lnd ]; then
   echo "You need an lnd with electrum-bridge (ysangkok/lnd maybe?) checked out since we implement the interface from there, and need it to generate code"
   exit 1
 fi
