@@ -299,7 +299,7 @@ def to_bytes(something, encoding='utf8'):
     elif isinstance(something, bytearray):
         return bytes(something)
     else:
-        raise TypeError("Not a string or bytes like object")
+        raise TypeError("Not a string or bytes like object: " + repr(something))
 
 bfh_builder = lambda x: bytes.fromhex(x)
 

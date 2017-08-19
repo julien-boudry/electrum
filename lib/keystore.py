@@ -234,6 +234,7 @@ class Xpub:
     def derive_pubkey(self, for_change, n):
         xpub = self.xpub_change if for_change else self.xpub_receive
         if xpub is None:
+            assert self.xpub is not None
             xpub = bip32_public_derivation(self.xpub, "", "/%d"%for_change)
             if for_change:
                 self.xpub_change = xpub
@@ -285,7 +286,7 @@ class BIP32_KeyStore(Deterministic_KeyStore, Xpub):
         self.xprv = d.get('xprv')
 
     def format_seed(self, seed):
-        return ' '.join(seed.split())
+        return b' '.join(seed.split())
 
     def dump(self):
         d = Deterministic_KeyStore.dump(self)
@@ -322,6 +323,7 @@ class BIP32_KeyStore(Deterministic_KeyStore, Xpub):
     def add_xprv(self, xprv):
         self.xprv = xprv
         self.xpub = bitcoin.xpub_from_xprv(xprv)
+        assert self.xpub is not None
 
     def add_xprv_from_seed(self, bip32_seed, xtype, derivation):
         xprv, xpub = bip32_root(bip32_seed, xtype)

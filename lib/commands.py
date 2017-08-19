@@ -831,6 +831,7 @@ def add_global_options(parser):
     group.add_argument("--testnet", action="store_true", dest="testnet", default=False, help="Use Testnet")
     group.add_argument("--segwit", action="store_true", dest="segwit", default=False, help="The Wizard will create Segwit seed phrases (Testnet only).")
     group.add_argument("--nolnet", action="store_true", dest="nolnet", default=False, help="Use Nolnet")
+    group.add_argument("--simnet", action="store_true", dest="simnet", default=False, help="Use Simnet")
 
 def get_parser():
     # create main parser

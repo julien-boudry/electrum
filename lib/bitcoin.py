@@ -356,6 +356,7 @@ def base_encode(v, base):
 def base_decode(v, length, base):
     """ decode v into a string of len bytes."""
     # assert_bytes(v)
+    assert v is not None
     v = to_bytes(v, 'ascii')
     assert base in (58, 43)
     chars = __b58chars
@@ -389,6 +390,7 @@ def EncodeBase58Check(vchIn):
 
 
 def DecodeBase58Check(psz):
+    assert psz is not None
     vchRet = base_decode(psz, None, base=58)
     key = vchRet[0:-4]
     csum = vchRet[-4:]
@@ -801,6 +803,7 @@ def serialize_xpub(xtype, c, cK, depth=0, fingerprint=b'\x00'*4, child_number=b'
 
 
 def deserialize_xkey(xkey, prv):
+    assert xkey is not None
     xkey = DecodeBase58Check(xkey)
     if len(xkey) != 78:
         raise BaseException('Invalid length')
@@ -899,6 +902,7 @@ def bip32_private_derivation(xprv, branch, sequence):
 
 
 def bip32_public_derivation(xpub, branch, sequence):
+    assert xpub is not None
     xtype, depth, fingerprint, child_number, c, cK = deserialize_xpub(xpub)
     assert sequence.startswith(branch)
     sequence = sequence[len(branch):]
