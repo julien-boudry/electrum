@@ -75,6 +75,20 @@ def set_nolnet():
     HEADERS_URL = "https://headers.electrum.org/nolnet_headers"
     GENESIS = "663c88be18d07c45f87f910b93a1a71ed9ef1946cad50eb6a6f3af4c424625c6"
 
+def set_simnet():
+    global ADDRTYPE_P2PKH, ADDRTYPE_P2SH, ADDRTYPE_P2WPKH
+    global XPRV_HEADER, XPUB_HEADER
+    global NOLNET, HEADERS_URL
+    global GENESIS
+    TESTNET = True
+    ADDRTYPE_P2PKH = 0x3f
+    ADDRTYPE_P2SH = 0x7b
+    ADDRTYPE_P2WPKH = 0xc5 # really?
+    XPRV_HEADER = 0x0420b900
+    XPUB_HEADER = 0x0420bd3a
+    HEADERS_URL = None
+    GENESIS = "683e86bd5c6d110d91b94b97137ba6bfe02dbbdb8e3dff722a669b5d69d77af6"
+
 
 
 ################################## transactions

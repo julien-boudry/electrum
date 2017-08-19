@@ -359,6 +359,10 @@ if __name__ == '__main__':
         bitcoin.set_nolnet()
         network.set_nolnet()
 
+    if config.get('simnet'):
+        bitcoin.set_simnet()
+        network.set_simnet()
+
     # run non-RPC commands separately
     if cmdname in ['create', 'restore']:
         run_non_RPC(config)
