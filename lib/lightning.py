@@ -29,16 +29,14 @@ K, K_compressed = bitcoin.get_pubkeys_from_secret(rand)
 pubk = bitcoin.public_key_to_p2pkh(K_compressed) # really compressed?
 print(pubk)
 assert len(pubk) <= 35
+print(bitcoin.public_key_to_p2wpkh(K_compressed))
 
 class LightningImpl(rpc_pb2_grpc.ElectrumBridgeServicer):
   def ConfirmedBalance(self, request, context):
     m = rpc_pb2.ConfirmedBalanceResponse()
     confs = request.confirmations
     witness = request.witness # bool
-    decoded = bitcoin.base_decode(pubk, 27, 58)
-    if decoded is not None and decoded[:3] == "\x19\x00\x00":
-      raise Exception("electrumx doesn't support these addresses!")
-    m.amount = sum(q(pubk).values() + q(bitcoin.public_key_to_p2wpkh(K_compressed)).values())
+    m.amount = sum(q(pubk).values()) + sum(q(bitcoin.public_key_to_p2wpkh(K_compressed)).values())
     return m
   def NewAddress(self, request, context):
     m = rpc_pb2.NewAddressResponse()
@@ -51,8 +49,6 @@ class LightningImpl(rpc_pb2_grpc.ElectrumBridgeServicer):
       m.address = bitcoin.public_key_to_p2pkh(K_compressed)
     else:
       assert False
-    if bitcoin.base_decode(m.address, 27, 58)[:3] == b'\xc5\x01\x00':
-      raise Exception("we asked electrum for a " + str(request.type) + " address but got something that isn't accepted by electrumx")
     return m
   def FetchRootKey(self, request, context):
     m = rpc_pb2.FetchRootKeyResponse()

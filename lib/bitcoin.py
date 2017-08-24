@@ -83,7 +83,7 @@ def set_simnet():
     TESTNET = True
     ADDRTYPE_P2PKH = 0x3f
     ADDRTYPE_P2SH = 0x7b
-    ADDRTYPE_P2WPKH = 0xc5 # really?
+    ADDRTYPE_P2WPKH = 0x19
     XPRV_HEADER = 0x0420b900
     XPUB_HEADER = 0x0420bd3a
     HEADERS_URL = None
