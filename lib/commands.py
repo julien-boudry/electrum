@@ -680,7 +680,7 @@ class Commands:
     @command('')
     def testlightning(self):
         from . import lightning
-        return lightning.test_lightning(self.wallet)
+        return lightning.test_lightning(self.wallet, self.network, self.config)
 
 param_descriptions = {
     'privkey': 'Private key. Type \'?\' to get a prompt.',

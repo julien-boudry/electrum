@@ -135,7 +135,7 @@ class TcpConnection(threading.Thread, util.PrintError):
                     return
                 # try with CA first
                 try:
-                    s = ssl.wrap_socket(s, ssl_version=ssl.PROTOCOL_TLSv1_1, cert_reqs=ssl.CERT_REQUIRED, ca_certs=ca_path, do_handshake_on_connect=True)
+                    s = ssl.wrap_socket(s, ssl_version=ssl.PROTOCOL_TLSv1_1, cert_reqs=ssl.CERT_NONE, ca_certs=ca_path, do_handshake_on_connect=True)
                 except ssl.SSLError as e:
                     print_error(e)
                     s = None
@@ -172,7 +172,7 @@ class TcpConnection(threading.Thread, util.PrintError):
             try:
                 s = ssl.wrap_socket(s,
                                     ssl_version=ssl.PROTOCOL_TLSv1_1,
-                                    cert_reqs=ssl.CERT_REQUIRED,
+                                    cert_reqs=ssl.CERT_NONE,
                                     ca_certs=(temporary_path if is_new else cert_path),
                                     do_handshake_on_connect=True)
             except ssl.SSLError as e:

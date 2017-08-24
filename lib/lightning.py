@@ -2,15 +2,24 @@ import sys
 sys.path.insert(0, "lib/ln")
 from .ln import rpc_pb2_grpc, rpc_pb2
 import os
-from . import keystore, bitcoin
+from . import keystore, bitcoin, network, daemon, interface
+import socket
 
 import grpc
 import concurrent.futures as futures
 import time
 
-WALLET = None
+bitcoin.set_simnet()
 
-rand = os.urandom(32)
+WALLET = None
+NETWORK = None
+
+rand = bytes([
+		0xb7, 0x94, 0x38, 0x5f, 0x2d, 0x1e, 0xf7, 0xab,
+		0x4d, 0x92, 0x73, 0xd1, 0x90, 0x63, 0x81, 0xb4,
+		0x4f, 0x2f, 0x6f, 0x25, 0x18, 0xa3, 0xef, 0xb9,
+		0x64, 0x49, 0x18, 0x83, 0x31, 0x98, 0x47, 0x53
+])
 #k = keystore.BIP32_KeyStore({})
 #k.add_xprv_from_seed(rand, 0, 'm/0/0')
 #assert k.xpub is not None
@@ -24,18 +33,50 @@ assert len(pubk) <= 35
 class LightningImpl(rpc_pb2_grpc.ElectrumBridgeServicer):
   def ConfirmedBalance(self, request, context):
     m = rpc_pb2.ConfirmedBalanceResponse()
-    m.amount = 100
+    confs = request.confirmations
+    witness = request.witness # bool
+    decoded = bitcoin.base_decode(pubk, 27, 58)
+    if decoded is not None and decoded[:3] == "\x19\x00\x00":
+      raise Exception("electrumx doesn't support these addresses!")
+    m.amount = sum(q(pubk).values() + q(bitcoin.public_key_to_p2wpkh(K_compressed)).values())
     return m
   def NewAddress(self, request, context):
     m = rpc_pb2.NewAddressResponse()
-    m.address = pubk
+    if request.type == rpc_pb2.NewAddressRequest.WITNESS_PUBKEY_HASH:
+      m.address = bitcoin.public_key_to_p2wpkh(K_compressed)
+      #m.address = bitcoin.base_encode(b"\x19\x00\x00" + bitcoin.hash_160(K) + bitcoin.Hash(b"\x19\x00\x00" + bitcoin.hash_160(K))[:4], 58)
+    elif request.type == rpc_pb2.NewAddressRequest.NESTED_PUBKEY_HASH:
+      assert False
+    elif request.type == rpc_pb2.NewAddressRequest.PUBKEY_HASH:
+      m.address = bitcoin.public_key_to_p2pkh(K_compressed)
+    else:
+      assert False
+    if bitcoin.base_decode(m.address, 27, 58)[:3] == b'\xc5\x01\x00':
+      raise Exception("we asked electrum for a " + str(request.type) + " address but got something that isn't accepted by electrumx")
     return m
   def FetchRootKey(self, request, context):
     m = rpc_pb2.FetchRootKeyResponse()
-    m.rootKey = bytes([1,2,3])
+    m.rootKey = K_compressed
     return m
 
-def serve():
+def q(pubk):
+  #print(NETWORK.synchronous_get(('blockchain.address.get_balance', [pubk]), timeout=1))
+  # create an INET, STREAMing socket
+  s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+  # now connect to the web server on port 80 - the normal http port
+  s.connect(("localhost", 50001))
+  i = interface.Interface("localhost:50001:garbage", s)
+  i.queue_request('blockchain.address.get_balance', [pubk], 42) # 42 is id
+  i.send_requests()
+  time.sleep(.1)
+  res = i.get_responses()
+  assert len(res) == 1
+  print(res[0][1])
+  return res[0][1]["result"]
+
+def serve(config):
+  print(q(pubk))
+
   server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
   rpc_pb2_grpc.add_ElectrumBridgeServicer_to_server(
       LightningImpl(), server)
@@ -47,10 +88,12 @@ def serve():
   except KeyboardInterrupt:
     server.stop(0)
 
-def test_lightning(wallet):
-  global WALLET
+def test_lightning(wallet, networ, config):
+  global WALLET, NETWORK
   WALLET = wallet
-  serve()
+  #assert networ is not None
+  NETWORK = networ
+  serve(config)
 
 if __name__ == '__main__':
   serve()
