@@ -5,9 +5,10 @@ import os
 from . import keystore, bitcoin, network, daemon, interface
 import socket
 
-import grpc
 import concurrent.futures as futures
 import time
+from jsonrpclib.SimpleJSONRPCServer import SimpleJSONRPCServer
+import json as jsonm
 
 bitcoin.set_simnet()
 
@@ -31,29 +32,45 @@ print(pubk)
 assert len(pubk) <= 35
 print(bitcoin.public_key_to_p2wpkh(K_compressed))
 
-class LightningImpl(rpc_pb2_grpc.ElectrumBridgeServicer):
-  def ConfirmedBalance(self, request, context):
-    m = rpc_pb2.ConfirmedBalanceResponse()
-    confs = request.confirmations
-    witness = request.witness # bool
-    m.amount = sum(q(pubk).values()) + sum(q(bitcoin.public_key_to_p2wpkh(K_compressed)).values())
-    return m
-  def NewAddress(self, request, context):
-    m = rpc_pb2.NewAddressResponse()
-    if request.type == rpc_pb2.NewAddressRequest.WITNESS_PUBKEY_HASH:
-      m.address = bitcoin.public_key_to_p2wpkh(K_compressed)
-      #m.address = bitcoin.base_encode(b"\x19\x00\x00" + bitcoin.hash_160(K) + bitcoin.Hash(b"\x19\x00\x00" + bitcoin.hash_160(K))[:4], 58)
-    elif request.type == rpc_pb2.NewAddressRequest.NESTED_PUBKEY_HASH:
-      assert False
-    elif request.type == rpc_pb2.NewAddressRequest.PUBKEY_HASH:
-      m.address = bitcoin.public_key_to_p2pkh(K_compressed)
-    else:
-      assert False
-    return m
-  def FetchRootKey(self, request, context):
-    m = rpc_pb2.FetchRootKeyResponse()
-    m.rootKey = K_compressed
-    return m
+from google.protobuf import json_format
+
+def ConfirmedBalance(json):
+  print(json)
+  request = rpc_pb2.ConfirmedBalanceRequest()
+  json_format.Parse(json, request)
+  m = rpc_pb2.ConfirmedBalanceResponse()
+  confs = request.confirmations
+  witness = request.witness # bool
+  m.amount = sum(q(pubk).values()) + sum(q(bitcoin.public_key_to_p2wpkh(K_compressed)).values())
+  msg = json_format.MessageToJson(m)
+  print("repl", msg)
+  return msg
+def NewAddress(json):
+  print(json)
+  request = rpc_pb2.NewAddressRequest()
+  json_format.Parse(json, request)
+  m = rpc_pb2.NewAddressResponse()
+  if request.type == rpc_pb2.NewAddressRequest.WITNESS_PUBKEY_HASH:
+    m.address = bitcoin.public_key_to_p2wpkh(K_compressed)
+    #m.address = bitcoin.base_encode(b"\x19\x00\x00" + bitcoin.hash_160(K) + bitcoin.Hash(b"\x19\x00\x00" + bitcoin.hash_160(K))[:4], 58)
+  elif request.type == rpc_pb2.NewAddressRequest.NESTED_PUBKEY_HASH:
+    assert False
+  elif request.type == rpc_pb2.NewAddressRequest.PUBKEY_HASH:
+    m.address = bitcoin.public_key_to_p2pkh(K_compressed)
+  else:
+    assert False
+  msg = json_format.MessageToJson(m)
+  print("repl", msg)
+  return msg
+def FetchRootKey(json):
+  print(json)
+  request = rpc_pb2.FetchRootKeyRequest()
+  json_format.Parse(json, request)
+  m = rpc_pb2.FetchRootKeyResponse()
+  m.rootKey = K_compressed
+  msg = json_format.MessageToJson(m)
+  print("repl", msg)
+  return msg
 
 def q(pubk):
   #print(NETWORK.synchronous_get(('blockchain.address.get_balance', [pubk]), timeout=1))
@@ -71,18 +88,13 @@ def q(pubk):
   return res[0][1]["result"]
 
 def serve(config):
-  print(q(pubk))
+  #print(q(pubk))
 
-  server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-  rpc_pb2_grpc.add_ElectrumBridgeServicer_to_server(
-      LightningImpl(), server)
-  server.add_insecure_port('[::]:9090')
-  server.start()
-  try:
-    while True:
-      time.sleep(10)
-  except KeyboardInterrupt:
-    server.stop(0)
+  server = SimpleJSONRPCServer(('localhost', 8432))
+  server.register_function(FetchRootKey)
+  server.register_function(ConfirmedBalance)
+  server.register_function(NewAddress)
+  server.serve_forever()
 
 def test_lightning(wallet, networ, config):
   global WALLET, NETWORK
