@@ -35,6 +35,7 @@ import math
 import hashlib
 import unicodedata
 import string
+import secrets
 
 import ecdsa
 import pbkdf2
@@ -179,7 +180,9 @@ class Mnemonic(object):
         n_custom = int(math.ceil(math.log(custom_entropy, 2)))
         n = max(16, num_bits - n_custom)
         print_error("make_seed", prefix, "adding %d bits"%n)
-        my_entropy = ecdsa.util.randrange(pow(2, n))
+        my_entropy = 0
+        while my_entropy == 0:
+          my_entropy = secrets.randbelow(pow(2, n))
         nonce = 0
         while True:
             nonce += 1
